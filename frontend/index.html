@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Zoom Bot</title>
+    <script src="https://source.zoom.us/2.18.5/lib/vendor/react.min.js"></script>
+    <script src="https://source.zoom.us/2.18.5/lib/vendor/react-dom.min.js"></script>
+    <script src="https://source.zoom.us/2.18.5/lib/vendor/redux.min.js"></script>
+    <script src="https://source.zoom.us/2.18.5/lib/vendor/redux-thunk.min.js"></script>
+    <script src="https://source.zoom.us/2.18.5/lib/vendor/lodash.min.js"></script>
+    <script src="https://source.zoom.us/zoom-meeting-2.18.5.min.js"></script>
+    <link rel="stylesheet" href="https://source.zoom.us/2.18.5/css/bootstrap.css">
+    <style>
+        #zmmtg-root {
+            height: 100vh;
+        }
+        .join-button {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="join-button">
+        <h1>Zoom Meeting</h1>
+        <button onclick="joinMeeting()">Join Zoom Meeting</button>
+    </div>
+    <div id="zmmtg-root"></div>
+
+    <script src="app.js"></script>
+</body>
+</html>
