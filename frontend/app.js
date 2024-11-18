@@ -1,47 +1,52 @@
- // Zoom Web SDK configuration
- ZoomMtg.setZoomJSLib('https://source.zoom.us/2.18.5/lib', '/av');
- ZoomMtg.preLoadWasm();
- ZoomMtg.prepareWebSDK();
+// Zoom Web SDK Initialization
+ZoomMtg.preLoadWasm();
+ZoomMtg.prepareJssdk();
 
- const zoomConfig = {
-     apiKey: 'zoom_key',
-     meetingNumber: 'Meeting-num',
-     role: 0,
-     userName: 'Zoom Bot',
-     userEmail: '',
-     passWord: 'meeting-pass',
- };
+// Zoom API Credentials
+const API_KEY = 'RXA_QzzRnmSVFB_deOmYw';
+const API_SECRET = 'BqdJl9WKN2A7FW8J4xR2AnkFsGjJt7ZF';
+const meetingNumber = '75420686814';
+const passWord = 'PG4YPN';
+const userName = 'jeff';
+const leaveUrl = 'https://zoom.us'; // URL to redirect after leaving meeting
 
- function joinMeeting() {
-     // Fetch signature from backend
-     fetch('http://localhost:3000/zoom-signature')
-         .then(response => response.json())
-         .then(data => {
-             const signature = data.signature;
+// Generate Signature
+function generateSignature(apiKey, apiSecret, meetingNumber, role) {
+    const timestamp = new Date().getTime() - 30000;
+    const msg = Buffer.from(apiKey + meetingNumber + timestamp + role).toString('base64');
+    const hash = CryptoJS.HmacSHA256(msg, apiSecret);
+    const signature = Buffer.from(`${apiKey}.${meetingNumber}.${timestamp}.${role}.${CryptoJS.enc.Base64.stringify(hash)}`).toString('base64');
+    return signature.replace(/=+$/, '');
+}
 
-             // Initialize Zoom Meeting
-             ZoomMtg.init({
-                 leaveUrl: 'https://zoom.us',
-                 isSupportAV: true,
-                 success: () => {
-                     ZoomMtg.join({
-                         signature: signature,
-                         apiKey: zoomConfig.apiKey,
-                         meetingNumber: zoomConfig.meetingNumber,
-                         userName: zoomConfig.userName,
-                         passWord: zoomConfig.passWord,
-                         success: () => {
-                             console.log('Joined meeting successfully');
-                         },
-                         error: (err) => {
-                             console.error('Failed to join meeting:', err);
-                         }
-                     });
-                 },
-                 error: (err) => {
-                     console.error('Zoom init error:', err);
-                 }
-             });
-         })
-         .catch(err => console.error('Error fetching signature:', err));
- }
+// Join Meeting Function
+function joinMeeting(signature) {
+    ZoomMtg.init({
+        leaveUrl: leaveUrl,
+        success: function () {
+            ZoomMtg.join({
+                signature: signature,
+                meetingNumber: meetingNumber,
+                userName: userName,
+                apiKey: API_KEY,
+                userEmail: 'your-email@example.com',
+                passWord: passWord,
+                success: function (res) {
+                    console.log('Join meeting success');
+                },
+                error: function (err) {
+                    console.error(err);
+                }
+            });
+        },
+        error: function (err) {
+            console.error(err);
+        }
+    });
+}
+
+// Button Click Handler
+document.getElementById('joinMeetingBtn').addEventListener('click', function () {
+    const signature = generateSignature(API_KEY, API_SECRET, meetingNumber, 0); // 0 for attendee
+    joinMeeting(signature);
+});
