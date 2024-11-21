@@ -1,54 +1,66 @@
-const { exec } = require('child_process');
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+ZoomMtg.preLoadWasm()
+ZoomMtg.prepareWebSDK()
 
-const app = express();
-const port = 3000;
+var authEndpoint = ''
+var sdkKey = ''
+var meetingNumber = ''
+var passWord = ''
+var role = 0
+var userName = ''
+var userEmail = ''
+var registrantToken = ''
+var zakToken = ''
+var leaveUrl = 'https://zoom.us'
 
-// Load the config.json file and extract the meetings array
-const config = JSON.parse(fs.readFileSync('config.json', 'utf8'));
-const meetings = config.meetings;
-
-// Middleware to parse JSON bodies
-app.use(express.json());
-
-// Function to get the correct Zoom executable path based on the OS
-function getZoomExecutablePath() {
-    return path.join(process.env.USERPROFILE, 'AppData', 'Roaming', 'Zoom', 'bin', 'Zoom.exe');
+function getSignature() {
+  fetch(authEndpoint, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      meetingNumber: meetingNumber,
+      role: role
+    })
+  }).then((response) => {
+    return response.json()
+  }).then((data) => {
+    console.log(data)
+    startMeeting(data.signature)
+  }).catch((error) => {
+  	console.log(error)
+  })
 }
 
-// Endpoint to join a meeting
-app.post('/join-meeting', (req, res) => {
-    const meetingId = req.body.meetingId;  // Meeting ID from request
-    const meetingDetails = meetings.find(meeting => meeting.meetingId === meetingId);
+function startMeeting(signature) {
 
-    if (!meetingDetails) {
-        return res.status(404).send('Meeting ID not found in config.json');
+  document.getElementById('zmmtg-root').style.display = 'block'
+
+  ZoomMtg.init({
+    leaveUrl: leaveUrl,
+    patchJsMedia: true,
+    leaveOnPageUnload: true,
+    success: (success) => {
+      console.log(success)
+      ZoomMtg.join({
+        signature: signature,
+        sdkKey: sdkKey,
+        meetingNumber: meetingNumber,
+        passWord: passWord,
+        userName: userName,
+        userEmail: userEmail,
+        tk: registrantToken,
+        zak: zakToken,
+        success: (success) => {
+          console.log(success)
+        },
+        error: (error) => {
+          console.log(error)
+        },
+      })
+    },
+    error: (error) => {
+      console.log(error)
     }
-
-    const password = meetingDetails.password;  // Passcode from config.json
-
-    const zoomPath = getZoomExecutablePath();  // Get the correct Zoom executable path for the OS
-    console.log(`Joining meeting: ${meetingId} with passcode: ${password}`);
-
-    // Construct the Zoom command to join the meeting
-    const zoomUrl = `zoommtg://zoom.us/join?action=join&confno=${meetingId}&pwd=${password}`;
-
-    // Start Zoom client
-    exec(`"${zoomPath}" --url "${zoomUrl}"`, (err, stdout, stderr) => {
-        if (err) {
-            console.error('Error starting Zoom:', err);
-            console.error('stderr:', stderr);
-            return res.status(500).send('Failed to start Zoom meeting.');
-        }
-        console.log('Zoom client started:', stdout);
-        res.send(`Successfully joined meeting ${meetingId}`);
-    });
-});
-
-// Start the Express server
-app.listen(port, () => {
-    console.log(`Server is running on http://localhost:${port}`);
-});
+  })
+}
